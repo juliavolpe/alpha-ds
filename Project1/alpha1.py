@@ -5,22 +5,18 @@
 #us to do, but unfortunately every link for the faculty is different. There is very
 #little consistency within each webpage, so it was extremely difficult to extract 
 #all the data we needed. We were able to make this program which prints the full
-#time faculty and their PhD's and schools. That is the best we were able to do.
+#time faculty count and their PhD's and schools into a csv. That is the best we were able to do.
 #We wrote comments for our thinking and failed attempts and what not.
 
 
 import urllib.request
-# from urllib.request import Request, urlopen
 import sys
-
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, Tag
 import itertools
 from collections import Counter
 import json
 import time
 import pandas as pd
-# from urllib.request import Request, urlopen
-
 
 faculty = [] #List to store name of the faculty
 degree = [] #List to store name of the degree
@@ -59,18 +55,41 @@ def getInfoFromLink(link):
         url=href
     return {'href': link.get('href'), 'url':url, 'string': link.string }
     
-def getFacultyBioPage(content):
-    soup=BeautifulSoup(content, "lxml")
+def get_text_with_br(tag, result=''):
+    for x in tag.contents:
+        if isinstance(x, Tag):  #check if content is a tag
+            if x.name == 'br':  #if tag is <br> append it as string
+                result += '\n'
+            else:  #for any other tag, recurse
+                result = get_text_with_br(x, result)
+        else:  #if content is NavigableString (string), append
+            result += x
+    return result
+
+def getFacultyBioPage(countByUniversityByDegree, content):
+    soup=BeautifulSoup(content, "html5lib")
     div=soup.find("div", class_="faculty-bios")
     allH4=div.find_all('h4')
     for h4 in allH4:
         if h4 and h4.string and 'Degrees' in h4.string:
             paragraph=h4.find_next_siblings("p")
-            print(paragraph[0].getText())
+            allDegrees=get_text_with_br(paragraph[0])
+            for degree in allDegrees.strip().split('\n'):
+                parts=degree.strip().split(',')
+                if(len(parts)==3):
+                    deg=parts[0].strip()
+                    # fac=parts[1]
+                    university=parts[2].strip()
+                    if university not in countByUniversityByDegree:
+                        countByUniversityByDegree[university]=dict()
+                    countByDegree=countByUniversityByDegree[university]
+                    if deg not in countByDegree:
+                        countByDegree[deg]=0
+                    countByDegree[deg]+=1
+                    print(degree)    
             break
 
-def getFacultyBioLinks(facultyContent):
-    # count=0
+def getFacultyBioLinks(countByUniversityByDegree, facultyContent):
     soup=BeautifulSoup(facultyContent, "lxml")
     links=soup.find_all('a')
     for link in links:
@@ -79,10 +98,32 @@ def getFacultyBioLinks(facultyContent):
             linkInfo=getInfoFromLink(link)
             bioPage=readWebPage(linkInfo['url'])
             print(linkInfo['url'])
-            getFacultyBioPage(bioPage)
-            # count+=1
+            getFacultyBioPage(countByUniversityByDegree, bioPage)
 
-    #  https://www.umb.edu/faculty_staff/bio
+countByUniversityByDegree=dict()
+
+webContext=readWebPage('https://www.umb.edu/academics/cla/faculty')
+print(webContext)
+soup=BeautifulSoup(webContext, "lxml")
+div=soup.find("div", id="content")
+array=div.ul.find_all('a')
+for link in array:
+    linkInfo=getInfoFromLink(link)
+
+    print(linkInfo['url'])
+    faculty=readWebPage(linkInfo['url'])
+    getFacultyBioLinks(countByUniversityByDegree, faculty)
+
+print(countByUniversityByDegree)
+df = pd.DataFrame() 
+for university in countByUniversityByDegree:
+    countByDegree=countByUniversityByDegree[university]
+    result={'University':university}
+    result.update(countByDegree)
+
+    df=df.append(result, ignore_index=True)
+
+df.to_csv('~/Desktop/alpha-ds/faculty.csv', index=False, encoding='utf-8')
 
 '''
 def get_UMB_page(url):
@@ -129,29 +170,7 @@ TAGS = "University of Massachusetts Boston, UMass, UMB, Beacons, U-Mass, Boston 
 n = 1
 
 faculty = {}
-'''
 
-webContext=readWebPage('https://www.umb.edu/academics/cla/faculty')
-print(webContext)
-soup=BeautifulSoup(webContext, "lxml")
-div=soup.find("div", id="content")
-# print(div)
-array=div.ul.find_all('a')
-# print(array)
-for link in array:
-    linkInfo=getInfoFromLink(link)
-    # href=linkInfo.get('href')
-    # if not href.startswith('https'):
-    #     url='https://www.umb.edu/'+href
-    # else:
-    #     url=href
-
-    print(linkInfo['url'])
-    faculty=readWebPage(linkInfo['url'])
-    getFacultyBioLinks(faculty)
-    # https://www.umb.edu/faculty_staff/bio
-
-'''
 while True:
     # URLp1 = f'{BASE1}{"/".join(depName)}'
     #we defined depName when we defined get_UMB_page(url), but we don't know how to make it so 
