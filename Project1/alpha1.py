@@ -27,6 +27,7 @@ def writeFile(filename, content):
         with open(filename, mode="wb") as f:
             f.write(content)
     except:
+        #DZ: '%' string formatting is VERY obsolete and shouls not be used
         print("could not open file %s" % f)
 
 def readFile(filename):
@@ -123,7 +124,10 @@ for university in countByUniversityByDegree:
 
     df=df.append(result, ignore_index=True)
 
+#DZ: Do not use absolute path, I cannot run your code
 df.to_csv('~/Desktop/alpha-ds/faculty.csv', index=False, encoding='utf-8')
+
+#DZ: Please remove commented CODE before submission
 
 '''
 def get_UMB_page(url):
