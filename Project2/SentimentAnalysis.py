@@ -9,27 +9,26 @@ import sys
 import nltk
 import csv
 import time
-from zipfile import ZipFile
 from collections import Counter
 from nltk.corpus import words
 from nltk.corpus import stopwords
 
-
-ZIP_FILE_NAME = 'reviews.zip'
+nltk.download('words')
+nltk.download('stopwords')
+nltk.download('punkt')
+nltk.download('wordnet') 
 YELP_REVIEW_FILE_NAME = 'yelp_academic_dataset_review_small.json'
 WORD_SET = set(words.words('en')) 
 STOP_WORD_SET = set(stopwords.words('english'))
 CSV_FILE_NAME = "lemmas.csv"
 
-#reads file from zip
-def readFile(zipName, fileName):
+def readFile(filename):
     try:
-        with ZipFile(zipName, 'r') as myzip:
-            with myzip.open(fileName) as myfile:
-                return myfile.read()
-
-    except (FileNotFoundError, IOError):
-        raise RuntimeError("Sorry, the zip file %s could not be read with zipped file %s") % (zipName, fileName)
+        with open(filename, mode= "r") as f:
+            return f.read()
+    except:
+        print("Sorry, could not open file %s" % f)
+        return None
 
 #gets json content
 def getJson(data):
@@ -64,8 +63,11 @@ def writeCSV(sortedAv, dictionary):
     print()
     print("Writing... " + CSV_FILE_NAME)
     try:
-        with open(CSV_FILE_NAME, 'w') as csvOut:
-            writer = csv.writer(csvOut, delimeter = ",", quote = '"', quoting = csv.QUOTE_MINIMAL)
+        with open(CSV_FILE_NAME, mode='w') as f:
+            writer = csv.writer(f, delimiter=',')
+        #this did not work for some reason
+        # with open(CSV_FILE_NAME, 'w') as csvfile:
+        #     writer = csv.writer(csvfile, delimeter = ",", quote = '"', quoting = csv.QUOTE_MINIMAL)
             #headers
             writer.writerow(['Lemma', ' Sentiment Level']) 
             writer.writerow(["-------------------------"])
@@ -76,12 +78,13 @@ def writeCSV(sortedAv, dictionary):
             for w in sortedAv[:500]:
                 writer.writerow([w, dictionary[w]])       
     except:
+        print("Sorry, could not open csv file %s" % f)
         return None
 
 #main method
 def main():
     try:
-        file = readFile(ZIP_FILE_NAME, YELP_REVIEW_FILE_NAME)
+        file = readFile(YELP_REVIEW_FILE_NAME)
         jsonContent = getJson(file)
             
         sumRating = dict()
@@ -106,10 +109,11 @@ def main():
             averageRating[key] = (sumRating[key] / numReviews[key])
 
         sortedAv = sorted(averageRating, key = averageRating.get, reverse = True)
+
         writeCSV(sortedAv, averageRating)
 
     except Exception as e:
-        print("Sorry, Error %s", e)
+        print("Sorry, error %s", e)
 
 if __name__ == "__main__":
     start_time = time.time()
