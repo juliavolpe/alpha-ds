@@ -13,6 +13,7 @@ from collections import Counter
 from nltk.corpus import words
 from nltk.corpus import stopwords
 
+# DZ: Assume already downloaded
 nltk.download('words')
 nltk.download('stopwords')
 nltk.download('punkt')
@@ -22,11 +23,13 @@ WORD_SET = set(words.words('en'))
 STOP_WORD_SET = set(stopwords.words('english'))
 CSV_FILE_NAME = "lemmas.csv"
 
+#DZ: json.load() reads directly from a file, no need to use two functions
 def readFile(filename):
     try:
         with open(filename, mode= "r") as f:
             return f.read()
     except:
+        #DZ: %-style formatting is obsolete and should not be used
         print("Sorry, could not open file %s" % f)
         return None
 
@@ -40,6 +43,7 @@ def getJson(data):
 #processes text using lemmas   
 def processText(text):
     wordList = nltk.word_tokenize(text.lower())
+    # DZ: Do not create a new lemmatizer for each review
     lem = nltk.WordNetLemmatizer()
     lemmed = [lem.lemmatize(w) for w in wordList]           
     finalList = [word for word in lemmed if word not in STOP_WORD_SET and word.isalnum() and word in WORD_SET]
@@ -69,7 +73,9 @@ def writeCSV(sortedAv, dictionary):
         # with open(CSV_FILE_NAME, 'w') as csvfile:
         #     writer = csv.writer(csvfile, delimeter = ",", quote = '"', quoting = csv.QUOTE_MINIMAL)
             #headers
-            writer.writerow(['Lemma', ' Sentiment Level']) 
+            writer.writerow(['Lemma', ' Sentiment Level'])
+            #DZ: A CSV file must be rectangular.
+            #DZ: Either write two lines or, better, none.
             writer.writerow(["-------------------------"])
 
             for w in sortedAv[-500:]:
@@ -79,6 +85,7 @@ def writeCSV(sortedAv, dictionary):
                 writer.writerow([w, dictionary[w]])       
     except:
         print("Sorry, could not open csv file %s" % f)
+        #DZ: Not needed. No return == return None
         return None
 
 #main method
