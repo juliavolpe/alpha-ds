@@ -7,12 +7,14 @@ import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
 
-PREFIX_DIR = '/Users/juliavolpe/Desktop/Alpha-ds/Project3/'
+# DZ: Do not use absolute paths
+PREFIX_DIR = ''#'/Users/juliavolpe/Desktop/Alpha-ds/Project3/'
 USERS_FILE = 'users.tsv'
 MESSAGES_FILE = 'messages.tsv'
 DISCUSSIONS_FILE = 'discussions.tsv'
 DISCUSSION_POSTS_FILE = 'discussion_posts.tsv'
 
+# DZ: Why do you need all these functions?
 def readUsers():
     df = pd.read_csv(PREFIX_DIR + USERS_FILE, delimiter = "\t")
     return df
